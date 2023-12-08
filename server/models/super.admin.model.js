@@ -12,6 +12,10 @@ const superAdminSchema = new Schema({
     trim: true,
     lowercase: true,
   },
+  role: {
+    type: String,
+    default: "SuperAdmin",
+  },
   password: {
     type: String,
     required: true,
