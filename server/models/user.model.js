@@ -4,6 +4,7 @@ const userSchema = new Schema(
   {
     admin: {
       type: Schema.Types.ObjectId,
+      ref: "Admin",
       required: true,
     },
     name: {

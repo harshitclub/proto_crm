@@ -2,9 +2,9 @@ import mongoose, { Schema } from "mongoose";
 
 const accountSchema = new Schema(
   {
-    sAdmin: {
+    admin: {
       type: Schema.Types.ObjectId,
-      ref: "SuperAdmin",
+      ref: "Admin",
       required: true,
     },
     accountName: {
