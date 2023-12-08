@@ -17,10 +17,20 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format."],
     },
-    phone: { type: Number, required: true },
-    designation: { type: String, required: true },
-    location: { type: String, required: true },
+    phone: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: function (value) {
+          return /^\d{10}$/.test(value);
+        },
+        message: "Invalid phone number format. Please enter a 10-digit number.",
+      },
+    },
+    designation: { type: String, required: true, trim: true },
+    location: { type: String, required: true, trim: true },
     role: {
       type: String,
       enum: ["User", "AccountManager"],
@@ -32,7 +42,12 @@ const userSchema = new Schema(
         ref: "Account",
       },
     ],
-    password: { type: String, required: true },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      message: "Password must be at least 6 characters long.",
+    },
   },
   { timestamps: true }
 );

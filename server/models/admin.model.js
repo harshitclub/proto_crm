@@ -16,11 +16,18 @@ const adminSchema = new Schema(
       unique: true,
       trim: true,
       lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format."],
     },
     phone: {
       type: Number,
       required: true,
       unique: true,
+      validate: {
+        validator: function (value) {
+          return /^\d{10}$/.test(value);
+        },
+        message: "Invalid phone number format. Please enter a 10-digit number.",
+      },
     },
     accounts: [
       {
@@ -34,9 +41,14 @@ const adminSchema = new Schema(
         ref: "User",
       },
     ],
+    logo: {
+      type: String, // URL or reference to the uploaded logo image
+    },
     password: {
       type: String,
       required: true,
+      minlength: 6,
+      message: "Password must be at least 6 characters long.",
     },
   },
   { timestamps: true }

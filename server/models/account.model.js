@@ -7,7 +7,7 @@ const accountSchema = new Schema(
       ref: "Admin",
       required: true,
     },
-    accountName: {
+    name: {
       type: String,
       required: true,
     },
