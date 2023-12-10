@@ -29,8 +29,8 @@ const userSchema = new Schema(
         message: "Invalid phone number format. Please enter a 10-digit number.",
       },
     },
-    designation: { type: String, required: true, trim: true },
-    location: { type: String, required: true, trim: true },
+    designation: { type: String, required: true },
+    location: { type: String, required: true },
     role: {
       type: String,
       enum: ["User", "AccountManager"],

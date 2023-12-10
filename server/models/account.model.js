@@ -37,6 +37,10 @@ const accountSchema = new Schema(
         ref: "Opportunity",
       },
     ],
+    website: {
+      type: String,
+      default: "",
+    },
     remarks: {
       type: String,
       default: "",
