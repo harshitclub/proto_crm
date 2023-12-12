@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
@@ -42,15 +43,55 @@ const userSchema = new Schema(
         ref: "Account",
       },
     ],
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: String,
+      enum: ["active", "block", "freeze"],
+      default: "active",
+    },
     password: {
       type: String,
       required: true,
       minlength: 6,
       message: "Password must be at least 6 characters long.",
     },
+    refreshToken: String,
   },
   { timestamps: true }
 );
+
+userSchema.methods.generateAccessToken = async function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      role: this.role,
+      isVerified: this.isVerified,
+      isActive: this.isActive,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
+
+userSchema.methods.generateRefreshToken = async function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      role: this.role,
+      isVerified: this.isVerified,
+      isActive: this.isActive,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
+};
 
 const User = mongoose.model("User", userSchema);
 

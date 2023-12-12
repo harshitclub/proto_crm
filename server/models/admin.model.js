@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import jwt from "jsonwebtoken";
 
 const adminSchema = new Schema(
   {
@@ -44,6 +45,7 @@ const adminSchema = new Schema(
     ],
     logo: {
       type: String, // URL or reference to the uploaded logo image
+      default: "",
     },
     gstin: {
       type: String,
@@ -116,6 +118,7 @@ const adminSchema = new Schema(
     isActive: {
       type: String,
       enum: ["active", "block", "freeze"],
+      default: "active",
     },
     role: {
       type: String,
@@ -128,9 +131,40 @@ const adminSchema = new Schema(
       minlength: 6,
       message: "Password must be at least 6 characters long.",
     },
+    refreshToken: String,
   },
   { timestamps: true }
 );
+
+adminSchema.methods.generateAccessToken = async function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      role: this.role,
+      isVerified: this.isVerified,
+      isActive: this.isActive,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
+
+adminSchema.methods.generateRefreshToken = async function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      role: this.role,
+      isVerified: this.isVerified,
+      isActive: this.isActive,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
+};
 
 const Admin = mongoose.model("Admin", adminSchema);
 
