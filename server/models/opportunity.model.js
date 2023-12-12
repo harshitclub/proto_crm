@@ -17,7 +17,6 @@ const opportunitySchema = new Schema(
         enum: ["INR", "USD"],
       },
       amount: Number,
-      default: 0,
     },
     duration: {
       type: String,

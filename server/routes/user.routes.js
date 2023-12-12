@@ -5,5 +5,7 @@ const userRouter = express.Router();
 
 userRouter.post("/register", userRegister);
 userRouter.post("/login", userLogin);
+// userRouter.patch("/update")
+// userRouter.delete("/delete")
 
 export default userRouter;

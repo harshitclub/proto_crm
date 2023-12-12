@@ -6,6 +6,9 @@ import dbConnect from "./db/dbConfig.js";
 import superAdminRouter from "./routes/superAdmin.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import userRouter from "./routes/user.routes.js";
+import accountRouter from "./routes/account.routes.js";
+import opportunityRouter from "./routes/opportunity.routes.js";
+import contactPersonRouter from "./routes/contact.person.routes.js";
 
 dotenv.config();
 
@@ -19,6 +22,9 @@ app.use(cors());
 app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/account", accountRouter);
+app.use("/api/v1/opportunity", opportunityRouter);
+app.use("/api/v1/contact-person", contactPersonRouter);
 
 dbConnect();
 app.listen(PORT, () => {

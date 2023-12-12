@@ -5,5 +5,6 @@ const adminRouter = express.Router();
 
 adminRouter.post("/register", adminRegister);
 adminRouter.post("/login", adminLogin);
+// adminRouter.patch("/update")
 
 export default adminRouter;

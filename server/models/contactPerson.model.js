@@ -4,7 +4,7 @@ const contactPersonSchema = new Schema(
   {
     account: { type: Schema.Types.ObjectId, ref: "Account", required: true },
     name: { type: String, required: true },
-    email: { type: String, required: true, trim: true, lowercase: true },
+    email: { type: String, trim: true, lowercase: true },
     designation: { type: String, required: true },
     location: { type: String },
     phone: { type: Number },
@@ -13,6 +13,6 @@ const contactPersonSchema = new Schema(
   { timestamps: true }
 );
 
-const ContactPerson = mongoose.model("Opportunity", contactPersonSchema);
+const ContactPerson = mongoose.model("ContactPerson", contactPersonSchema);
 
 export default ContactPerson;
