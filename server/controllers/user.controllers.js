@@ -6,17 +6,18 @@ import validateMongoId from "../utils/validateMongoId.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 
 export const userRegister = async (req, res) => {
+  // Extract required fields from request body
   const { name, email, phone, designation, location, password } = req.body;
 
-  // validate require fields
+  // Validate if all required fields are present
   if (!name || !email || !phone || !designation || !location || !password) {
     return res.status(400).send({
       success: false,
-      message: "All fields are required.",
+      message: "All fields are required.", // Inform user of missing fields
     });
   }
 
-  // Check for existing user
+  // Check if user with provided email already exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return res.status(409).send({
@@ -25,18 +26,24 @@ export const userRegister = async (req, res) => {
     });
   }
 
+  // Hash the password for secure storage
   const hashPassword = await passwordHash(password);
 
+  // Extract admin token from cookies
   const adminToken = req.cookies.proto_access;
+
   const verifyAdminToken = await verifyJwtToken(adminToken);
   const adminID = verifyAdminToken._id;
   validateMongoId(adminID);
-  const findAdmin = await Admin.findById(adminID);
 
+  // Find the admin associated with the token
+  const findAdmin = await Admin.findById(adminID); // Find admin by extracted ID
+
+  // Check if admin exists
   if (!findAdmin) {
     return res.status(401).send({
       success: false,
-      message: "Admin Not Found",
+      message: "Admin Not Found", // Inform user of missing admin
     });
   }
 
@@ -51,23 +58,30 @@ export const userRegister = async (req, res) => {
     password: hashPassword,
   });
 
+  // Start a MongoDB transaction for efficient data manipulation
   const session = await mongoose.startSession();
-  session.startTransaction();
+  session.startTransaction(); // Begin transaction
+
+  // Save the new user to the database
   await newUser.save();
-  findAdmin.users.push(newUser);
-  await findAdmin.save();
+
+  // Update the admin's user list
+  findAdmin.users.push(newUser); // Add new user to the admin's users list
+  await findAdmin.save(); // Update the admin document in the database
+
+  // Commit the transaction to permanently save the changes
   await session.commitTransaction();
 
-  // Select specific fields excluding sensitive data
+  // Fetch the newly created user with specific fields excluded (sensitive data)
   const createdUser = await User.findById(newUser._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken" // Exclude sensitive fields from response
   );
 
-  // Respond with success message and user data
+  // Respond with success message and filtered user data
   res.status(201).json({
     success: true,
     message: "User registered successfully.",
-    data: createdUser,
+    data: createdUser, // Provide user data without sensitive information
   });
 };
 
