@@ -14,6 +14,7 @@ import userRouter from "./routes/user.routes.js";
 import accountRouter from "./routes/account.routes.js";
 import opportunityRouter from "./routes/opportunity.routes.js";
 import contactPersonRouter from "./routes/contact.person.routes.js";
+import todoRouter from "./routes/todo.routes.js";
 
 // Configure environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/account", accountRouter);
 app.use("/api/v1/opportunity", opportunityRouter);
 app.use("/api/v1/contact-person", contactPersonRouter);
+app.use("/api/v1/todo", todoRouter);
 
 // Database connection and server start
 dbConnect();

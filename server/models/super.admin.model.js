@@ -18,6 +18,12 @@ const superAdminSchema = new Schema(
       type: String,
       default: "SuperAdmin",
     },
+    todos: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "TODO",
+      },
+    ],
     password: {
       type: String,
       required: true,

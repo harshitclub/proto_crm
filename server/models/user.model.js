@@ -43,6 +43,12 @@ const userSchema = new Schema(
         ref: "Account",
       },
     ],
+    todos: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "TODO",
+      },
+    ],
     isVerified: {
       type: Boolean,
       default: false,

@@ -43,6 +43,12 @@ const adminSchema = new Schema(
         ref: "User",
       },
     ],
+    todos: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "TODO",
+      },
+    ],
     logo: {
       type: String, // URL or reference to the uploaded logo image
       default: "",
