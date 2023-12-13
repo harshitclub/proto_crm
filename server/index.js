@@ -38,13 +38,13 @@ app.use(cookieParser());
 // - Enables cross-origin resource sharing
 app.use(cors());
 
-app.use("/api/v1/super-admin", superAdminRouter);
-app.use("/api/v1/admin", adminRouter);
-app.use("/api/v1/user", userRouter);
-app.use("/api/v1/account", accountRouter);
-app.use("/api/v1/opportunity", opportunityRouter);
-app.use("/api/v1/contact-person", contactPersonRouter);
-app.use("/api/v1/todo", todoRouter);
+app.use("/api/v1/super-admin", superAdminRouter); // super admin router middleware
+app.use("/api/v1/admin", adminRouter); // admin router middleware
+app.use("/api/v1/user", userRouter); // user router middleware
+app.use("/api/v1/account", accountRouter); // account router middleware
+app.use("/api/v1/opportunity", opportunityRouter); // opportunity router middleware
+app.use("/api/v1/contact-person", contactPersonRouter); // contact-person router middleware
+app.use("/api/v1/todo", todoRouter); // todo router middleware
 
 // Database connection and server start
 dbConnect();
