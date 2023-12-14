@@ -11,11 +11,11 @@ const accountSchema = new Schema(
       type: String,
       required: true,
     },
-    email: {
+    accountEmail: {
       type: String,
       trim: true,
-      unique: true,
       lowercase: true,
+      default: undefined,
     },
     location: {
       type: String,

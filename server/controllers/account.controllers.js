@@ -5,7 +5,8 @@ import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 
 export const addAccount = async (req, res) => {
-  const { name, email, location, industries, website, remarks } = req.body;
+  const { name, accountEmail, location, industries, website, remarks } =
+    req.body;
 
   if (!name) {
     return res.status(400).send({
@@ -31,7 +32,7 @@ export const addAccount = async (req, res) => {
   const newAccount = await Account({
     admin: adminID,
     name,
-    email,
+    accountEmail,
     location,
     industries,
     website,

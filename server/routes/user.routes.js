@@ -4,11 +4,11 @@ import {
   userLogout,
   userRegister,
 } from "../controllers/user.controllers.js";
-import { auth } from "../middlewares/auth.middleware.js";
+import { adminAuth, auth } from "../middlewares/auth.middleware.js";
 
 const userRouter = express.Router();
 
-userRouter.post("/register", userRegister);
+userRouter.post("/register", adminAuth, userRegister);
 userRouter.post("/login", userLogin);
 userRouter.post("/logout", auth, userLogout);
 // userRouter.patch("/update")
