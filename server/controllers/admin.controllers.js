@@ -1,6 +1,7 @@
 import Admin from "../models/admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
+import validateMongoId from "../utils/validateMongoId.js";
 
 export const adminRegister = async (req, res) => {
   const { name, email, phone, password } = req.body;
@@ -89,14 +90,61 @@ export const adminLogin = async (req, res) => {
   admin.refreshToken = refreshToken;
   await admin.save();
 
-  // Set cookies for access and refresh tokens
-  res.cookie(`proto_access`, accessToken);
-  res.cookie(`proto_refresh`, refreshToken);
+  const loggedInAdmin = await Admin.findById(admin._id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
 
   // Send successful login response
-  return res.status(200).json({
-    success: true,
-    message: "Login successful",
-    user: admin,
-  });
+  return res
+    .status(200)
+    .cookie(`proto_access`, accessToken, options)
+    .cookie(`proto_refresh`, refreshToken, options)
+    .json({
+      success: true,
+      message: "Login successful",
+      user: loggedInAdmin,
+    });
+};
+
+export const adminLogout = async (req, res) => {
+  const adminId = validateMongoId(req.decodedToken._id);
+  return Admin.findByIdAndUpdate(
+    adminId,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .then(() => {
+      const options = {
+        httpOnly: true,
+        secure: true,
+      };
+
+      return res.status(200).clearCookie("proto_access", options).json({
+        message: "User Logged Out",
+      });
+    })
+    .catch((error) => {
+      console.error(error); // Log the error for debugging
+
+      // Handle specific errors
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: "Invalid user ID" });
+      } else if (error.name === "CastError") {
+        return res.status(400).json({ error: "Invalid user ID format" });
+      } else {
+        // fallback for unknown errors
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    });
 };

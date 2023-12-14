@@ -124,14 +124,61 @@ export const userLogin = async (req, res) => {
   user.refreshToken = refreshToken;
   await user.save();
 
-  // Set cookies for access and refresh tokens
-  res.cookie(`proto_access`, accessToken);
-  res.cookie(`proto_refresh`, refreshToken);
+  const loggedInUser = await User.findById(user.id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
 
   // Send successful login response
-  return res.status(200).json({
-    success: true,
-    message: "Login successful",
-    user: user,
-  });
+  return res
+    .status(200)
+    .cookie(`proto_access`, accessToken, options)
+    .cookie(`proto_refresh`, refreshToken, options)
+    .json({
+      success: true,
+      message: "Login successful",
+      user: loggedInUser,
+    });
+};
+
+export const userLogout = async (req, res) => {
+  const userId = validateMongoId(req.decodedToken._id);
+  return User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .then(() => {
+      const options = {
+        httpOnly: true,
+        secure: true,
+      };
+
+      return res.status(200).clearCookie("proto_access", options).json({
+        message: "User Logged Out",
+      });
+    })
+    .catch((error) => {
+      console.error(error); // Log the error for debugging
+
+      // Handle specific errors
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: "Invalid user ID" });
+      } else if (error.name === "CastError") {
+        return res.status(400).json({ error: "Invalid user ID format" });
+      } else {
+        // fallback for unknown errors
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    });
 };

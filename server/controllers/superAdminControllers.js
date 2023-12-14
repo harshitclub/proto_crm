@@ -1,10 +1,6 @@
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from "../constants.js";
 import SuperAdmin from "../models/super.admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../utils/jwtFunctions.js";
+import validateMongoId from "../utils/validateMongoId.js";
 
 export const superAdminRegister = async (req, res) => {
   const { name, email, password } = req.body;
@@ -90,16 +86,25 @@ export const superAdminLogin = async (req, res) => {
     superAdmin.refreshToken = refreshToken;
     await superAdmin.save();
 
-    // Set cookies for access and refresh tokens
-    res.cookie(`proto_access`, accessToken);
-    res.cookie(`proto_refresh`, refreshToken);
+    const loggedInSuperAdmin = await SuperAdmin.findById(superAdmin._id).select(
+      "-password -refreshToken"
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
 
     // Send successful login response
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      user: superAdmin,
-    });
+    return res
+      .status(200)
+      .cookie(`proto_access`, accessToken, options)
+      .cookie(`proto_refresh`, refreshToken, options)
+      .json({
+        success: true,
+        message: "Login successful",
+        user: loggedInSuperAdmin,
+      });
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -108,4 +113,42 @@ export const superAdminLogin = async (req, res) => {
       error,
     });
   }
+};
+
+export const superAdminLogout = async (req, res) => {
+  const superAdminId = validateMongoId(req.decodedToken._id);
+  return SuperAdmin.findByIdAndUpdate(
+    superAdminId,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .then(() => {
+      const options = {
+        httpOnly: true,
+        secure: true,
+      };
+
+      return res.status(200).clearCookie("proto_access", options).json({
+        message: "User Logged Out",
+      });
+    })
+    .catch((error) => {
+      console.error(error); // Log the error for debugging
+
+      // Handle specific errors
+      if (error.name === "ValidationError") {
+        return res.status(400).json({ error: "Invalid user ID" });
+      } else if (error.name === "CastError") {
+        return res.status(400).json({ error: "Invalid user ID format" });
+      } else {
+        // fallback for unknown errors
+        return res.status(500).json({ error: "Internal server error" });
+      }
+    });
 };
