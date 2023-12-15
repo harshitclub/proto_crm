@@ -211,7 +211,7 @@ export const getAdminAccounts = async (req, res) => {
     if (!admin) {
       return res.status(404).send({
         success: false,
-        message: "Administrator not found",
+        message: "Admin not found",
       });
     }
 
@@ -219,7 +219,7 @@ export const getAdminAccounts = async (req, res) => {
     if (!admin.accounts || !admin.accounts.length) {
       return res.status(200).send({
         success: true,
-        message: "No active accounts found for this administrator",
+        message: "No active accounts found for this admin",
       });
     }
 
@@ -277,14 +277,66 @@ export const getAdminUsers = async (req, res) => {
     if (!admin.users || !admin.users.length) {
       return res.status(200).send({
         success: true,
-        message: "No active accounts found for this administrator",
+        message: "No active users found for this admin",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Users Fetched",
+      users: admin.users,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid admin ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle Admin schema validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
+
+export const getAdminTodos = async (req, res) => {
+  const adminId = req.decodedToken._id;
+  try {
+    const admin = await Admin.findById(adminId).populate({
+      path: "todos",
+    });
+
+    if (!admin) {
+      return res.status(404).send({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // If no accounts exist for this admin, respond with informative message
+    if (!admin.todos || !admin.todos.length) {
+      return res.status(200).send({
+        success: true,
+        message: "No todos found for this admin",
       });
     }
 
     return res.status(200).json({
       success: true,
       message: "Accounts Fetched",
-      accounts: admin.users,
+      todos: admin.todos,
     });
   } catch (error) {
     console.error(error);
