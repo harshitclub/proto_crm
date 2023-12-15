@@ -2,6 +2,7 @@ import { getProfile } from "../helpers/commonFunc.js";
 import SuperAdmin from "../models/super.admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
+import Admin from "../models/admin.model.js";
 
 export const superAdminRegister = async (req, res) => {
   const { name, email, password } = req.body;
@@ -107,7 +108,6 @@ export const superAdminLogin = async (req, res) => {
         user: loggedInSuperAdmin,
       });
   } catch (error) {
-    console.log(error);
     res.status(500).send({
       success: false,
       message: "Error In Super Admin Login API",
@@ -170,8 +170,207 @@ export const superAdminProfile = async (req, res) => {
       superAdmin,
     });
   } catch (error) {
-    console.error(error);
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
 
+export const getAdmins = async (req, res) => {
+  try {
+    const admins = await Admin.find().select("-password -refreshToken");
+
+    // Check if any admins were found
+    if (!admins || !admins.length) {
+      return res.status(204).send({
+        success: true,
+        message: "No admins found",
+      });
+    }
+
+    // Send successful response with list of admins
+    return res.status(200).json({
+      success: true,
+      message: "Admins Fetched",
+      admins,
+    });
+  } catch (error) {
+    // Handle specific error types
+    if (error.name === "ValidationError") {
+      // Handle Admin schema validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
+
+export const getAdmin = async (req, res) => {
+  const adminId = req.params.id;
+
+  // Handle missing admin ID
+  if (!adminId) {
+    return res.status(400).send({
+      success: false,
+      message: "Missing admin ID",
+    });
+  }
+
+  try {
+    // Try to find the admin with the specified ID
+    const admin = await Admin.findById(adminId).select(
+      "-password -refreshToken"
+    );
+
+    // Handle admin not found
+    if (!admin) {
+      return res.status(404).send({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // Send successful response with admin details
+    return res.status(200).json({
+      success: true,
+      message: "Admin Fetched",
+      admin,
+    });
+  } catch (error) {
+    // Handle specific error types
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid admin ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle Admin schema validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
+
+export const getAdminUsers = async (req, res) => {
+  const adminId = req.params.id;
+
+  try {
+    const admin = await Admin.findById(adminId).populate({
+      path: "users",
+      select: "-password -refreshToken",
+    });
+
+    // Check if admin exists
+    if (!admin) {
+      return res.status(404).send({
+        success: false,
+        message: "Administrator not found",
+      });
+    }
+
+    // Check if the admin has any users
+    if (!admin.users || !admin.users.length) {
+      return res.status(204).send({
+        success: true,
+        message: "No users found for this admin",
+      });
+    }
+
+    // Return all users with populated data
+    return res.status(200).json({
+      success: true,
+      message: "Users Fetched",
+      users: admin.users,
+    });
+  } catch (error) {
+    // Handle specific error types
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid admin ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle Admin schema validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
+
+export const getSuperAdminTodos = async (req, res) => {
+  const superAdminId = req.decodedToken._id;
+  try {
+    const superAdmin = await SuperAdmin.findById(superAdminId).populate({
+      path: "todos",
+    });
+
+    // Handle nonexistent superAdmin
+    if (!superAdmin) {
+      return res.status(404).send({
+        success: false,
+        message: "Super Admin not found",
+      });
+    }
+
+    // Check for and handle empty todos list
+    if (!superAdmin.todos || !superAdmin.todos.length) {
+      return res.status(200).send({
+        success: true,
+        message: "No todos found for super admin",
+        todos: [],
+      });
+    }
+
+    // Return successful response with todos
+    return res.status(200).json({
+      success: true,
+      message: "Todos Fetched",
+      todos: superAdmin.todos,
+    });
+  } catch (error) {
+    // Handle specific error types
     if (error.name === "CastError") {
       return res.status(400).send({
         success: false,
