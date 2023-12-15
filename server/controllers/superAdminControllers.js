@@ -1,3 +1,4 @@
+import { getProfile } from "../helpers/commonFunc.js";
 import SuperAdmin from "../models/super.admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
@@ -151,4 +152,44 @@ export const superAdminLogout = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
       }
     });
+};
+
+export const superAdminProfile = async (req, res) => {
+  try {
+    const superAdmin = await getProfile(SuperAdmin, req.decodedToken._id);
+
+    if (!superAdmin) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "User Profile",
+      superAdmin,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
 };

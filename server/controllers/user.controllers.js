@@ -4,6 +4,7 @@ import User from "../models/user.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
+import { getProfile } from "../helpers/commonFunc.js";
 
 export const userRegister = async (req, res) => {
   // Extract required fields from request body
@@ -146,7 +147,8 @@ export const userLogin = async (req, res) => {
 };
 
 export const userLogout = async (req, res) => {
-  const userId = validateMongoId(req.decodedToken._id);
+  const userId = req.decodedToken._id;
+  validateMongoId(userId);
   return User.findByIdAndUpdate(
     userId,
     {
@@ -181,4 +183,45 @@ export const userLogout = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
       }
     });
+};
+
+export const userProfile = async (req, res) => {
+  try {
+    const user = await getProfile(User, req.decodedToken._id);
+
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User Profile",
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
 };

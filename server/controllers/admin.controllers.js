@@ -1,3 +1,4 @@
+import { getProfile } from "../helpers/commonFunc.js";
 import Admin from "../models/admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
@@ -147,4 +148,45 @@ export const adminLogout = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
       }
     });
+};
+
+export const adminProfile = async (req, res) => {
+  try {
+    const admin = await getProfile(Admin, req.decodedToken._id);
+
+    if (!admin) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin Profile",
+      admin,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
 };
