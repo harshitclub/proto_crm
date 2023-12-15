@@ -54,3 +54,60 @@ export const addAccount = async (req, res) => {
     data: createdAccount,
   });
 };
+
+export const getAccount = async (req, res) => {
+  const accountId = req.params.id;
+
+  // Validate if account ID is present
+  if (!accountId) {
+    return res.status(400).send({
+      success: false,
+      message: "Missing required parameter: account ID",
+    });
+  }
+
+  try {
+    // Attempt to find account by ID
+    const account = await Account.findById(accountId)
+      .populate("contactPerson")
+      .populate("opportunities");
+
+    // Check if account exists
+    if (!account) {
+      return res.status(404).send({
+        success: false,
+        message: "Account not found",
+      });
+    }
+
+    // Send successful response with account data
+    return res.status(200).json({
+      success: true,
+      message: "Account Fetched",
+      account,
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Handle specific error types
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid account ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
