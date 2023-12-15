@@ -45,6 +45,7 @@ export const adminAuth = async (req, res, next) => {
       next();
     });
   } catch (error) {
+    console.log(error);
     if (error.name === "CastError") {
       return res.status(400).send({ error: "Invalid token format" });
     } else if (error.status) {
@@ -71,6 +72,7 @@ export const superAdminAuth = async (req, res, next) => {
       next();
     });
   } catch (error) {
+    console.log(error);
     if (error.name === "CastError") {
       return res.status(400).send({ error: "Invalid token format" });
     } else if (error.status) {
