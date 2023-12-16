@@ -38,6 +38,26 @@ app.use(cookieParser());
 // - Enables cross-origin resource sharing
 app.use(cors());
 
+// Handling the invalid route
+function handleInvalidRoute(req, res, next) {
+  // Set appropriate status code
+  res.status(404);
+
+  // Send error message
+  res.json({
+    success: false,
+    message: "Invalid API Route",
+  });
+
+  // Log the request details for debugging
+  console.error(`Invalid route: ${req.method} ${req.originalUrl}`);
+
+  // Call next middleware (if any) in the chain
+  next();
+}
+
+app.use(handleInvalidRoute);
+
 app.use("/api/v1/super-admin", superAdminRouter); // super admin router middleware
 app.use("/api/v1/admin", adminRouter); // admin router middleware
 app.use("/api/v1/user", userRouter); // user router middleware
