@@ -15,6 +15,8 @@ import accountRouter from "./routes/account.routes.js";
 import opportunityRouter from "./routes/opportunity.routes.js";
 import contactPersonRouter from "./routes/contact.person.routes.js";
 import todoRouter from "./routes/todo.routes.js";
+import { limiter } from "./middlewares/rate.limiter.js";
+import { handleInvalidRoute } from "./middlewares/handleInvalidRoute.js";
 
 // Configure environment variables
 dotenv.config();
@@ -38,24 +40,10 @@ app.use(cookieParser());
 // - Enables cross-origin resource sharing
 app.use(cors());
 
+// Rate Limit Middleware
+app.use(limiter);
+
 // Handling the invalid route
-function handleInvalidRoute(req, res, next) {
-  // Set appropriate status code
-  res.status(404);
-
-  // Send error message
-  res.json({
-    success: false,
-    message: "Invalid API Route",
-  });
-
-  // Log the request details for debugging
-  console.error(`Invalid route: ${req.method} ${req.originalUrl}`);
-
-  // Call next middleware (if any) in the chain
-  next();
-}
-
 app.use(handleInvalidRoute);
 
 app.use("/api/v1/super-admin", superAdminRouter); // super admin router middleware
