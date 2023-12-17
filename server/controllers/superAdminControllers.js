@@ -1,8 +1,10 @@
+import { z } from "zod";
 import { getProfile } from "../helpers/commonFunc.js";
 import SuperAdmin from "../models/super.admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import Admin from "../models/admin.model.js";
+import { loginSchema } from "../helpers/zodSchemas.js";
 
 export const superAdminRegister = async (req, res) => {
   const { name, email, password } = req.body;
@@ -47,16 +49,8 @@ export const superAdminRegister = async (req, res) => {
 };
 
 export const superAdminLogin = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    // validate request body
-    if (!email || !password) {
-      return res.status(400).send({
-        success: false,
-        message: "Please provide email and password",
-      });
-    }
+    const { email, password } = await loginSchema.parseAsync(req.body);
 
     // Find super admin by email
     const superAdmin = await SuperAdmin.findOne({ email });
@@ -108,11 +102,21 @@ export const superAdminLogin = async (req, res) => {
         user: loggedInSuperAdmin,
       });
   } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: "Error In Super Admin Login API",
-      error,
-    });
+    // handling zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
 };
 
