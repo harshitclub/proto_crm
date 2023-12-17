@@ -4,6 +4,7 @@ import {
   adminLogout,
   adminProfile,
   adminRegister,
+  changeAdminPassword,
   getAdminAccounts,
   getAdminTodos,
   getAdminUsers,
@@ -19,6 +20,7 @@ const adminRouter = express.Router();
 adminRouter.post("/register", superAdminAuth, adminRegister);
 adminRouter.post("/login", adminLogin);
 adminRouter.post("/logout", auth, adminLogout);
+adminRouter.post("/change-password", auth, changeAdminPassword);
 adminRouter.get("/profile", adminAuth, adminProfile);
 adminRouter.get("/accounts", adminAuth, getAdminAccounts);
 adminRouter.get("/users", adminAuth, getAdminUsers);
