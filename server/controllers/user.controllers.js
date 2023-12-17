@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
+import { z } from "zod";
 import Admin from "../models/admin.model.js";
 import User from "../models/user.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import { getProfile } from "../helpers/commonFunc.js";
+import { loginSchema } from "../helpers/zodSchemas.js";
 
 export const userRegister = async (req, res) => {
   // Extract required fields from request body
@@ -87,63 +89,73 @@ export const userRegister = async (req, res) => {
 };
 
 export const userLogin = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = await loginSchema.parseAsync(req.body);
 
-  // validate request body
-  if (!email || !password) {
-    return res.status(400).send({
-      success: false,
-      message: "Please provide email and password",
-    });
+    // Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).send({
+        success: false,
+        message: "User Not Found",
+      });
+    }
+
+    // validate password
+    const isPasswordValid = await isPasswordCorrect(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).send({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Generate tokens
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    // Update user with refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const loggedInUser = await User.findById(user.id).select(
+      "-password -refreshToken"
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    // Send successful login response
+    return res
+      .status(200)
+      .cookie(`proto_access`, accessToken, options)
+      .cookie(`proto_refresh`, refreshToken, options)
+      .json({
+        success: true,
+        message: "Login successful",
+        user: loggedInUser,
+      });
+  } catch (error) {
+    // handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
-
-  // Find user by email
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    return res.status(401).send({
-      success: false,
-      message: "User Not Found",
-    });
-  }
-
-  // validate password
-  const isPasswordValid = await isPasswordCorrect(password, user.password);
-
-  if (!isPasswordValid) {
-    return res.status(401).send({
-      success: false,
-      message: "Invalid credentials",
-    });
-  }
-
-  // Generate tokens
-  const accessToken = await user.generateAccessToken();
-  const refreshToken = await user.generateRefreshToken();
-
-  // Update user with refresh token
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  const loggedInUser = await User.findById(user.id).select(
-    "-password -refreshToken"
-  );
-
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-
-  // Send successful login response
-  return res
-    .status(200)
-    .cookie(`proto_access`, accessToken, options)
-    .cookie(`proto_refresh`, refreshToken, options)
-    .json({
-      success: true,
-      message: "Login successful",
-      user: loggedInUser,
-    });
 };
 
 export const userLogout = async (req, res) => {
