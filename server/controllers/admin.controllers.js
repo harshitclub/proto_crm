@@ -1,4 +1,6 @@
+import { z } from "zod";
 import { getProfile } from "../helpers/commonFunc.js";
+import { loginSchema } from "../helpers/zodSchemas.js";
 import Admin from "../models/admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
@@ -53,63 +55,73 @@ export const adminRegister = async (req, res) => {
 };
 
 export const adminLogin = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = await loginSchema.parseAsync(req.body);
 
-  // validate request body
-  if (!email || !password) {
-    return res.status(400).send({
-      success: false,
-      message: "Please provide email and password",
-    });
+    // Find admin by email
+    const admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      return res.status(401).send({
+        success: false,
+        message: "Admin Not Found",
+      });
+    }
+
+    // validate password
+    const isPasswordValid = await isPasswordCorrect(password, admin.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).send({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Generate tokens
+    const accessToken = await admin.generateAccessToken();
+    const refreshToken = await admin.generateRefreshToken();
+
+    // Update admin with refresh token
+    admin.refreshToken = refreshToken;
+    await admin.save();
+
+    const loggedInAdmin = await Admin.findById(admin._id).select(
+      "-password -refreshToken"
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    // Send successful login response
+    return res
+      .status(200)
+      .cookie(`proto_access`, accessToken, options)
+      .cookie(`proto_refresh`, refreshToken, options)
+      .json({
+        success: true,
+        message: "Login successful",
+        user: loggedInAdmin,
+      });
+  } catch (error) {
+    // handle zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
-
-  // Find admin by email
-  const admin = await Admin.findOne({ email });
-
-  if (!admin) {
-    return res.status(401).send({
-      success: false,
-      message: "Admin Not Found",
-    });
-  }
-
-  // validate password
-  const isPasswordValid = await isPasswordCorrect(password, admin.password);
-
-  if (!isPasswordValid) {
-    return res.status(401).send({
-      success: false,
-      message: "Invalid credentials",
-    });
-  }
-
-  // Generate tokens
-  const accessToken = await admin.generateAccessToken();
-  const refreshToken = await admin.generateRefreshToken();
-
-  // Update admin with refresh token
-  admin.refreshToken = refreshToken;
-  await admin.save();
-
-  const loggedInAdmin = await Admin.findById(admin._id).select(
-    "-password -refreshToken"
-  );
-
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-
-  // Send successful login response
-  return res
-    .status(200)
-    .cookie(`proto_access`, accessToken, options)
-    .cookie(`proto_refresh`, refreshToken, options)
-    .json({
-      success: true,
-      message: "Login successful",
-      user: loggedInAdmin,
-    });
 };
 
 export const adminLogout = async (req, res) => {
