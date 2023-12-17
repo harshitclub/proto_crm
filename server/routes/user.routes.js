@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  changeUserPassword,
   userLogin,
   userLogout,
   userProfile,
@@ -13,6 +14,7 @@ userRouter.post("/register", adminAuth, userRegister);
 userRouter.post("/login", userLogin);
 userRouter.post("/logout", auth, userLogout);
 userRouter.get("/profile", auth, userProfile);
+userRouter.post("/change-password", auth, changeUserPassword);
 userRouter.delete("/delete");
 userRouter.patch("/update");
 

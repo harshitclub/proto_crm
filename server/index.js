@@ -44,7 +44,7 @@ app.use(cors());
 app.use(limiter);
 
 // Handling the invalid route
-app.use(handleInvalidRoute);
+// app.use(handleInvalidRoute);
 
 app.use("/api/v1/super-admin", superAdminRouter); // super admin router middleware
 app.use("/api/v1/admin", adminRouter); // admin router middleware

@@ -225,3 +225,73 @@ export const userProfile = async (req, res) => {
     }
   }
 };
+
+export const changeUserPassword = async (req, res) => {
+  try {
+    // Ensure required fields are present
+    if (!req.body || !req.body.oldPassword || !req.body.newPassword) {
+      return res.status(400).send({
+        success: false,
+        message: "Missing required fields: oldPassword, newPassword",
+      });
+    }
+
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.decodedToken._id;
+
+    // Verify user existence
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check old password validity
+    const isOldPasswordValid = await isPasswordCorrect(
+      oldPassword,
+      user.password
+    );
+    if (!isOldPasswordValid) {
+      return res.status(400).send({
+        success: false,
+        message: "Incorrect old password",
+      });
+    }
+
+    const hashPassword = await passwordHash(newPassword);
+
+    // Update user password and save
+    user.password = hashPassword;
+    await user.save();
+
+    // Send successful response
+    return res.status(200).send({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Handle specific error types
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error - password requirements not met",
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
