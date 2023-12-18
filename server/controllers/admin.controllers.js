@@ -1,10 +1,16 @@
 import { z } from "zod";
 import { getProfile } from "../helpers/commonFunc.js";
-import { adminRegisterSchema, loginSchema } from "../helpers/zodSchemas.js";
+import {
+  adminProfileUpdateSchema,
+  adminRegisterSchema,
+  loginSchema,
+} from "../helpers/zodSchemas.js";
 import Admin from "../models/admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
+import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
 export const adminRegister = async (req, res) => {
   try {
@@ -452,5 +458,201 @@ export const changeAdminPassword = async (req, res) => {
         error,
       });
     }
+  }
+};
+
+// not completely workable function
+
+export const adminProfileUpdate = async (req, res) => {
+  try {
+    // Validate request body against the schema
+    const validatedData = await adminProfileUpdateSchema.parseAsync(req.body, {
+      errorMap: (errors) => errors.map((error) => ({ message: error.message })),
+    });
+
+    const { name, phone, industry, description, address, social } =
+      validatedData;
+
+    const adminId = req.decodedToken._id;
+
+    const admin = await Admin.findById(adminId);
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    // Update fields
+    admin.name = name || admin.name;
+    admin.phone = phone || admin.phone;
+    admin.industry = industry || admin.industry;
+    admin.description = description || admin.description;
+    admin.address = {
+      country: address?.country || admin.address?.country,
+      state: address?.state || admin.address?.state,
+      city: address?.city || admin.address?.city,
+      pincode: address?.pincode || admin.address?.pincode,
+      street: address?.street || admin.address?.street,
+      landmark: address?.landmark || admin.address?.landmark,
+    };
+    admin.social = {
+      website: social?.website || admin.social?.website,
+      linkedin: social?.linkedin || admin.social?.linkedin,
+      twitter: social?.twitter || admin.social?.twitter,
+      facebook: social?.facebook || admin.social?.facebook,
+      instagram: social?.instagram || admin.social?.instagram,
+    };
+
+    // Save the updated admin profile
+    await admin.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    // Handle validation errors
+    if (error instanceof Error && Array.isArray(error.errors)) {
+      return res.status(400).json({
+        success: false,
+        message: `Error validating request: ${error.errors
+          .map((error) => error.message)
+          .join(", ")}`,
+      });
+    }
+
+    // Handle other errors
+    handleUpdateError(error, res);
+  }
+
+  // Centralized error handling function
+  function handleUpdateError(error, res) {
+    if (error instanceof mongoose.Error.ValidationError) {
+      const validationErrors = Object.values(error.errors).map(
+        (error) => error.message
+      );
+      return res.status(400).json({
+        success: false,
+        message: `Error updating profile: ${validationErrors.join(", ")}`,
+      });
+    } else if (error instanceof Error) {
+      // Specific message for known custom errors based on error type
+      return res.status(422).json({
+        success: false,
+        message: `Error updating profile: ${error.message}`,
+      });
+    } else {
+      // Generic 500 error for unexpected problems
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error while updating profile",
+      });
+    }
+  }
+};
+
+// not completely workable function
+
+export const assignAccounts = async (req, res) => {
+  const { userId, accountIds } = req.body;
+
+  // Validate userId and accountIds
+  if (!userId || !accountIds || !Array.isArray(accountIds)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid input. Provide userId and an array of accountIds.",
+    });
+  }
+
+  try {
+    const user = await User.findById(userId).select("-password -refreshToken");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check if the given accountIds are already assigned
+    const alreadyAssignedAccounts = user.accounts.filter((accountId) =>
+      accountIds.includes(accountId.toString())
+    );
+
+    if (alreadyAssignedAccounts.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Some accounts are already assigned to the user: ${alreadyAssignedAccounts.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Filter out the accountIds that are already assigned
+    const newAccountIds = accountIds.filter(
+      (accountId) => !user.accounts.map(String).includes(accountId)
+    );
+
+    // Assuming each accountId is a valid ObjectId, you may want to add validation
+    // to ensure that each accountId is a valid ObjectId before updating the user
+    user.accounts.push(...newAccountIds);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User accounts updated successfully",
+      newlyAssignedAccounts: newAccountIds,
+    });
+  } catch (error) {
+    // Handle errors
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// not completely workable function
+
+export const unassignAccounts = async (req, res) => {
+  const { userId, accountIdsToDelete } = req.body;
+
+  // Validate userId and accountIdsToDelete
+  if (!userId || !accountIdsToDelete || !Array.isArray(accountIdsToDelete)) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Invalid input. Provide userId and an array of accountIdsToDelete.",
+    });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { accounts: { $in: accountIdsToDelete } } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Unassign successfully",
+      userAccounts: user.accounts,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };

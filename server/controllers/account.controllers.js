@@ -31,12 +31,12 @@ export const addAccount = async (req, res) => {
   // add account
   const newAccount = await Account({
     admin: adminID,
-    name,
-    accountEmail,
-    location,
-    industries,
-    website,
-    remarks,
+    name: name,
+    accountEmail: accountEmail,
+    location: location,
+    industries: industries,
+    website: website,
+    remarks: remarks,
   });
 
   const session = await mongoose.startSession();

@@ -3,11 +3,14 @@ import {
   adminLogin,
   adminLogout,
   adminProfile,
+  adminProfileUpdate,
   adminRegister,
+  assignAccounts,
   changeAdminPassword,
   getAdminAccounts,
   getAdminTodos,
   getAdminUsers,
+  unassignAccounts,
 } from "../controllers/admin.controllers.js";
 import {
   adminAuth,
@@ -25,6 +28,8 @@ adminRouter.get("/profile", adminAuth, adminProfile);
 adminRouter.get("/accounts", adminAuth, getAdminAccounts);
 adminRouter.get("/users", adminAuth, getAdminUsers);
 adminRouter.get("/todos", adminAuth, getAdminTodos);
-// adminRouter.patch("/update")
+adminRouter.patch("/update", adminAuth, adminProfileUpdate);
+adminRouter.post("/assign-account", adminAuth, assignAccounts);
+adminRouter.delete("/unassign-account", adminAuth, unassignAccounts);
 
 export default adminRouter;

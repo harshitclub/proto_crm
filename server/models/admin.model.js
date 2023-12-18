@@ -57,10 +57,6 @@ const adminSchema = new Schema(
       type: String,
       default: "",
     },
-    pan: {
-      type: String,
-      default: "",
-    },
     industry: {
       type: String,
       default: "",

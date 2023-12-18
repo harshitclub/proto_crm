@@ -15,7 +15,8 @@ const accountSchema = new Schema(
       type: String,
       trim: true,
       lowercase: true,
-      default: undefined,
+      default: "",
+      unique: false,
     },
     location: {
       type: String,
