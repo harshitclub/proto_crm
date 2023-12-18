@@ -5,7 +5,7 @@ import { auth } from "../middlewares/auth.middleware.js";
 const opportunityRouter = express.Router();
 
 opportunityRouter.post("/add/:id", auth, addOpportunity);
-// opportunityRouter.update("/update/:id")
+// opportunityRouter.patch("/update/:id")
 // opportunityRouter.delete("/delete/:id")
 
 export default opportunityRouter;
