@@ -4,48 +4,63 @@ import SuperAdmin from "../models/super.admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import Admin from "../models/admin.model.js";
-import { loginSchema } from "../helpers/zodSchemas.js";
+import {
+  loginSchema,
+  superAdminRegisterSchema,
+} from "../helpers/zodSchemas.js";
 
 export const superAdminRegister = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = await superAdminRegisterSchema.parseAsync(
+      req.body
+    );
 
-  // Validate require fields
-  if (!name || !email || !password) {
-    return res.status(400).send({
-      success: false,
-      message: "All fields are required.",
+    // Check for existing super admin
+    const existingSuperAdmin = await SuperAdmin.findOne({ email });
+    if (existingSuperAdmin) {
+      return res.status(409).send({
+        success: false,
+        message: "Super Admin already registered. Please login.",
+      });
+    }
+
+    const hashPassword = await passwordHash(password);
+
+    // Create new super admin
+    const newSuperAdmin = await SuperAdmin.create({
+      name,
+      email,
+      password: hashPassword,
     });
-  }
 
-  // Check for existing super admin
-  const existingSuperAdmin = await SuperAdmin.findOne({ email });
-  if (existingSuperAdmin) {
-    return res.status(409).send({
-      success: false,
-      message: "Super Admin already registered. Please login.",
+    // Select specific fields excluding sensitive data
+    const createdSuperAdmin = await SuperAdmin.findById(
+      newSuperAdmin._id
+    ).select("-password -refreshToken");
+
+    // Respond with success message and super admin data
+    res.status(201).json({
+      success: true,
+      message: "Super Admin registered successfully.",
+      data: createdSuperAdmin,
     });
+  } catch (error) {
+    // handling zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
-
-  const hashPassword = await passwordHash(password);
-
-  // Create new super admin
-  const newSuperAdmin = await SuperAdmin.create({
-    name,
-    email,
-    password: hashPassword,
-  });
-
-  // Select specific fields excluding sensitive data
-  const createdSuperAdmin = await SuperAdmin.findById(newSuperAdmin._id).select(
-    "-password -refreshToken"
-  );
-
-  // Respond with success message and super admin data
-  res.status(201).json({
-    success: true,
-    message: "Super Admin registered successfully.",
-    data: createdSuperAdmin,
-  });
 };
 
 export const superAdminLogin = async (req, res) => {
