@@ -1,57 +1,67 @@
 import { z } from "zod";
 import { getProfile } from "../helpers/commonFunc.js";
-import { loginSchema } from "../helpers/zodSchemas.js";
+import { adminRegisterSchema, loginSchema } from "../helpers/zodSchemas.js";
 import Admin from "../models/admin.model.js";
 import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 
 export const adminRegister = async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  try {
+    const { name, email, phone, password } =
+      await adminRegisterSchema.parseAsync(req.body);
 
-  // Validate require fields
-  if (!name || !email || !phone || !password) {
-    return res.status(400).send({
-      success: false,
-      message: "All fields are required.",
+    // Check for existing admin
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(409).send({
+        success: false,
+        message: "Admin already registered. Please login.",
+      });
+    }
+
+    const hashPassword = await passwordHash(password);
+
+    const superAdminToken = req.cookies.proto_access;
+
+    const superAdminTokenDecoded = await verifyJwtToken(superAdminToken);
+
+    // Create new admin
+    const newAdmin = await Admin.create({
+      superAdmin: superAdminTokenDecoded._id,
+      name,
+      email,
+      phone,
+      password: hashPassword,
     });
-  }
 
-  // Check for existing admin
-  const existingAdmin = await Admin.findOne({ email });
-  if (existingAdmin) {
-    return res.status(409).send({
-      success: false,
-      message: "Admin already registered. Please login.",
+    // Select specific fields excluding sensitive data
+    const createdAdmin = await Admin.findById(newAdmin._id).select(
+      "-password -refreshToken"
+    );
+
+    // Respond with success message and admin data
+    res.status(201).json({
+      success: true,
+      message: "Admin registered successfully.",
+      data: createdAdmin,
     });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
   }
-
-  const hashPassword = await passwordHash(password);
-
-  const superAdminToken = req.cookies.proto_access;
-
-  const superAdminTokenDecoded = await verifyJwtToken(superAdminToken);
-
-  // Create new admin
-  const newAdmin = await Admin.create({
-    superAdmin: superAdminTokenDecoded._id,
-    name,
-    email,
-    phone,
-    password: hashPassword,
-  });
-
-  // Select specific fields excluding sensitive data
-  const createdAdmin = await Admin.findById(newAdmin._id).select(
-    "-password -refreshToken"
-  );
-
-  // Respond with success message and admin data
-  res.status(201).json({
-    success: true,
-    message: "Admin registered successfully.",
-    data: createdAdmin,
-  });
 };
 
 export const adminLogin = async (req, res) => {

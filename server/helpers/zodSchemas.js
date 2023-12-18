@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+export const adminRegisterSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  phone: z
+    .string()
+    .min(10, { message: "Phone number must be at least 10 digits" }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
+});
+
 export const userRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
