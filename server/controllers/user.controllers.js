@@ -317,3 +317,41 @@ export const changeUserPassword = async (req, res) => {
     }
   }
 };
+
+export const getAccounts = async (req, res) => {
+  const userId = req.decodedToken._id;
+
+  try {
+    const user = await User.findById(userId)
+      .select("-password -refreshToken")
+      .populate("accounts");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const userAccounts = user.accounts;
+
+    if (!userAccounts || userAccounts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No accounts found for the user",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Accounts fetched successfully",
+      accounts: userAccounts,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

@@ -1,9 +1,10 @@
 import express from "express";
 import { addOpportunity } from "../controllers/opportunity.controllers.js";
+import { auth } from "../middlewares/auth.middleware.js";
 
 const opportunityRouter = express.Router();
 
-opportunityRouter.post("/add/:id", addOpportunity);
+opportunityRouter.post("/add/:id", auth, addOpportunity);
 // opportunityRouter.update("/update/:id")
 // opportunityRouter.delete("/delete/:id")
 
