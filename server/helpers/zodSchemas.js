@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// zod validation super-admin register body
 export const superAdminRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
@@ -8,6 +9,7 @@ export const superAdminRegisterSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
+// zod validation admin register body
 export const adminRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
@@ -19,6 +21,7 @@ export const adminRegisterSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
+// zod validation user register body
 export const userRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
@@ -36,6 +39,7 @@ export const userRegisterSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters" }),
 });
 
+// zod validation login body
 export const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z
