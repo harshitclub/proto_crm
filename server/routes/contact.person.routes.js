@@ -1,11 +1,14 @@
 import express from "express";
-import { addContactPerson } from "../controllers/contact.person.controllers.js";
+import {
+  addContactPerson,
+  updateContactPerson,
+} from "../controllers/contact.person.controllers.js";
 import { auth } from "../middlewares/auth.middleware.js";
 
 const contactPersonRouter = express.Router();
 
-contactPersonRouter.post("/add/:id", auth, addContactPerson);
-// contactPersonRouter.update("/update/:id")
+contactPersonRouter.post("/add", auth, addContactPerson);
+contactPersonRouter.patch("/update", auth, updateContactPerson);
 // contactPersonRouter.delete("/delete/:id")
 
 export default contactPersonRouter;
