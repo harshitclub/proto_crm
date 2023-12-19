@@ -461,17 +461,10 @@ export const changeAdminPassword = async (req, res) => {
   }
 };
 
-// not completely workable function
-
 export const adminProfileUpdate = async (req, res) => {
   try {
-    // Validate request body against the schema
-    const validatedData = await adminProfileUpdateSchema.parseAsync(req.body, {
-      errorMap: (errors) => errors.map((error) => ({ message: error.message })),
-    });
-
     const { name, phone, industry, description, address, social } =
-      validatedData;
+      await adminProfileUpdateSchema.parseAsync(req.body);
 
     const adminId = req.decodedToken._id;
 
@@ -513,41 +506,19 @@ export const adminProfileUpdate = async (req, res) => {
       message: "Profile updated successfully",
     });
   } catch (error) {
-    // Handle validation errors
-    if (error instanceof Error && Array.isArray(error.errors)) {
-      return res.status(400).json({
+    // handle zod validation errors
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({
         success: false,
-        message: `Error validating request: ${error.errors
-          .map((error) => error.message)
-          .join(", ")}`,
-      });
-    }
-
-    // Handle other errors
-    handleUpdateError(error, res);
-  }
-
-  // Centralized error handling function
-  function handleUpdateError(error, res) {
-    if (error instanceof mongoose.Error.ValidationError) {
-      const validationErrors = Object.values(error.errors).map(
-        (error) => error.message
-      );
-      return res.status(400).json({
-        success: false,
-        message: `Error updating profile: ${validationErrors.join(", ")}`,
-      });
-    } else if (error instanceof Error) {
-      // Specific message for known custom errors based on error type
-      return res.status(422).json({
-        success: false,
-        message: `Error updating profile: ${error.message}`,
+        message: "Validation error",
+        errors: error.errors,
       });
     } else {
-      // Generic 500 error for unexpected problems
-      return res.status(500).json({
+      console.error(error);
+      return res.status(500).send({
         success: false,
-        message: "Internal server error while updating profile",
+        message: "Internal server error",
+        error,
       });
     }
   }
