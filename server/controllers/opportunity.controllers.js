@@ -113,4 +113,48 @@ export const updateOpportunity = async (req, res) => {
   }
 };
 
-export const deleteOppotunity = async (req, res) => {};
+export const deleteOppotunity = async (req, res) => {
+  const { opportunityId } = req.body;
+
+  try {
+    validateMongoId(opportunityId);
+
+    const opportunity = await Opportunity.findByIdAndDelete({
+      _id: opportunityId,
+    }).populate("account");
+
+    if (!opportunity) {
+      return res.status(404).json({
+        success: false,
+        message: "Opportunity not found",
+      });
+    }
+
+    // Update reference by directly manipulating array
+    await opportunity.account.opportunities.pull(opportunity);
+
+    // No need to save opportunity as it's deleted
+
+    await opportunity.account.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Opportunity deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid opportunity ID format",
+      });
+    } else if (error.name === "NotFoundError") {
+      return res.status(404).json({
+        message: "Opportunity not found",
+      });
+    } else {
+      return res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+};

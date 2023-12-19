@@ -88,3 +88,45 @@ export const updateContactPerson = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+export const deleteContactPerson = async (req, res) => {
+  const { contactPersonId } = req.body;
+
+  try {
+    validateMongoId(contactPersonId);
+
+    const contactPerson = await ContactPerson.findByIdAndDelete({
+      _id: contactPersonId,
+    }).populate("account");
+
+    if (!contactPerson) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Contact person not found" });
+    }
+
+    // Update reference by directly manipulating array
+    await contactPerson.account.contactPerson.pull(contactPerson);
+
+    await contactPerson.account.save();
+    return res.status(200).json({
+      success: true,
+      message: "Contact person deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid opportunity ID format",
+      });
+    } else if (error.name === "NotFoundError") {
+      return res.status(404).json({
+        message: "Opportunity not found",
+      });
+    } else {
+      return res.status(500).json({
+        message: "Internal server error",
+      });
+    }
+  }
+};

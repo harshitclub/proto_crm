@@ -20,7 +20,7 @@ export const adminRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
   phone: z
-    .string()
+    .number()
     .min(10, { message: "Phone number must be at least 10 digits" }),
   password: z
     .string()
@@ -35,7 +35,7 @@ export const adminProfileUpdateSchema = z.object({
     .min(3, { message: "Name must be at least 3 characters" })
     .optional(),
   phone: z
-    .string()
+    .number()
     .min(10, { message: "Phone number must be at least 10 digits" })
     .optional(),
   gstin: z
@@ -94,7 +94,7 @@ export const userRegisterSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
   phone: z
-    .string()
+    .number()
     .min(10, { message: "Phone number must be at least 10 digits" }),
   designation: z
     .string()
