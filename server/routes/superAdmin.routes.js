@@ -4,7 +4,6 @@ import {
   getAdmin,
   getAdminUsers,
   getAdmins,
-  getSuperAdminTodos,
   superAdminLogin,
   superAdminLogout,
   superAdminProfile,
@@ -26,6 +25,5 @@ superAdminRouter.get("/profile", superAdminAuth, superAdminProfile);
 superAdminRouter.get("/admins", superAdminAuth, getAdmins);
 superAdminRouter.get("/:id", superAdminAuth, getAdmin);
 superAdminRouter.get("/admin-users/:id", superAdminAuth, getAdminUsers);
-superAdminRouter.get("/todos", superAdminAuth, getSuperAdminTodos);
 
 export default superAdminRouter;

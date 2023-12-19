@@ -358,60 +358,6 @@ export const getAdminUsers = async (req, res) => {
   }
 };
 
-export const getSuperAdminTodos = async (req, res) => {
-  const superAdminId = req.decodedToken._id;
-  try {
-    const superAdmin = await SuperAdmin.findById(superAdminId).populate({
-      path: "todos",
-    });
-
-    // Handle nonexistent superAdmin
-    if (!superAdmin) {
-      return res.status(404).send({
-        success: false,
-        message: "Super Admin not found",
-      });
-    }
-
-    // Check for and handle empty todos list
-    if (!superAdmin.todos || !superAdmin.todos.length) {
-      return res.status(200).send({
-        success: true,
-        message: "No todos found for super admin",
-        todos: [],
-      });
-    }
-
-    // Return successful response with todos
-    return res.status(200).json({
-      success: true,
-      message: "Todos Fetched",
-      todos: superAdmin.todos,
-    });
-  } catch (error) {
-    // Handle specific error types
-    if (error.name === "CastError") {
-      return res.status(400).send({
-        success: false,
-        message: "Invalid user ID format",
-      });
-    } else if (error.name === "ValidationError") {
-      // Handle validation errors if applicable
-      return res.status(400).send({
-        success: false,
-        message: "Validation error",
-        errors: error.errors,
-      });
-    } else {
-      return res.status(500).send({
-        success: false,
-        message: "Internal server error",
-        error,
-      });
-    }
-  }
-};
-
 export const changeSuperAdminPassword = async (req, res) => {
   try {
     // Ensure required fields are present

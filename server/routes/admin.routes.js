@@ -8,7 +8,6 @@ import {
   assignAccounts,
   changeAdminPassword,
   getAdminAccounts,
-  getAdminTodos,
   getAdminUsers,
   unassignAccounts,
 } from "../controllers/admin.controllers.js";
@@ -27,7 +26,6 @@ adminRouter.post("/change-password", auth, changeAdminPassword);
 adminRouter.get("/profile", adminAuth, adminProfile);
 adminRouter.get("/accounts", adminAuth, getAdminAccounts);
 adminRouter.get("/users", adminAuth, getAdminUsers);
-adminRouter.get("/todos", adminAuth, getAdminTodos);
 adminRouter.patch("/update", adminAuth, adminProfileUpdate);
 adminRouter.post("/assign-account", adminAuth, assignAccounts);
 adminRouter.delete("/unassign-account", adminAuth, unassignAccounts);

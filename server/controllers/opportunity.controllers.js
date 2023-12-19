@@ -130,16 +130,13 @@ export const deleteOppotunity = async (req, res) => {
       });
     }
 
-    // Update reference by directly manipulating array
     await opportunity.account.opportunities.pull(opportunity);
-
-    // No need to save opportunity as it's deleted
 
     await opportunity.account.save();
 
     return res.status(200).json({
       success: true,
-      message: "Opportunity deleted successfully",
+      message: "Opportunity deleted",
     });
   } catch (error) {
     console.error(error);
