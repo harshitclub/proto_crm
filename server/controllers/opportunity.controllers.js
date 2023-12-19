@@ -112,3 +112,5 @@ export const updateOpportunity = async (req, res) => {
     });
   }
 };
+
+export const deleteOppotunity = async (req, res) => {};
