@@ -17,7 +17,5 @@ userRouter.post("/logout", auth, userLogout);
 userRouter.get("/profile", auth, userProfile);
 userRouter.post("/change-password", auth, changeUserPassword);
 userRouter.get("/accounts", auth, getAccounts);
-userRouter.delete("/delete");
-userRouter.patch("/update");
 
 export default userRouter;

@@ -10,7 +10,7 @@ import { isPasswordCorrect, passwordHash } from "../utils/bcryptFunctions.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import User from "../models/user.model.js";
-import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 
 export const adminRegister = async (req, res) => {
   try {
@@ -70,6 +70,7 @@ export const adminRegister = async (req, res) => {
   }
 };
 
+// this below code can be a common function
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = await loginSchema.parseAsync(req.body);
@@ -140,6 +141,7 @@ export const adminLogin = async (req, res) => {
   }
 };
 
+// this below code can be a common function
 export const adminLogout = async (req, res) => {
   const adminId = validateMongoId(req.decodedToken._id);
   return Admin.findByIdAndUpdate(
@@ -176,6 +178,76 @@ export const adminLogout = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
       }
     });
+};
+
+// this below code can be a common function
+export const refreshAccessToken = async (req, res) => {
+  // Extract refresh token from cookie or body
+  const incomingRefreshToken =
+    req.cookie.proto_refresh || req.body.proto_refresh;
+
+  // Handle missing refresh token
+  if (!incomingRefreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing refresh token",
+    });
+  }
+
+  try {
+    // Verify refresh token
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    // Find user based on decoded token ID
+    const user = await Admin.findById(decodedToken._id);
+
+    // Handle non-existent user
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Verify stored refresh token matches incoming token
+    if (incomingRefreshToken !== user.refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+
+    // Generate new access and refresh tokens
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    // Set cookie options
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    // Send successful login response
+    return res
+      .status(200)
+      .cookie(`proto_access`, accessToken, options)
+      .cookie(`proto_refresh`, refreshToken, options)
+      .json({
+        success: true,
+        message: "Access token refreshed",
+      });
+  } catch (error) {
+    console.error(error); // Log error for debugging
+
+    // Handle generic error with specific responses for JWT errors if needed
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 export const adminProfile = async (req, res) => {

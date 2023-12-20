@@ -9,6 +9,7 @@ import {
   changeAdminPassword,
   getAdminAccounts,
   getAdminUsers,
+  refreshAccessToken,
   unassignAccounts,
 } from "../controllers/admin.controllers.js";
 import {
@@ -21,6 +22,7 @@ const adminRouter = express.Router();
 
 adminRouter.post("/register", superAdminAuth, adminRegister);
 adminRouter.post("/login", adminLogin);
+adminRouter.post("/refresh-token", refreshAccessToken);
 adminRouter.post("/logout", auth, adminLogout);
 adminRouter.post("/change-password", auth, changeAdminPassword);
 adminRouter.get("/profile", adminAuth, adminProfile);
