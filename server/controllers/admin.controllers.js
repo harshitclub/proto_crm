@@ -250,6 +250,38 @@ export const refreshAccessToken = async (req, res) => {
   }
 };
 
+// export const uploadLogo = async (req, res) => {
+//   try {
+//     await upload(req, res);
+
+//     const imagePath = req.file.path;
+
+//     const uploadLogo = await uploadCloudinary(imagePath);
+
+//     if (!uploadLogo) {
+//       res.status(400).json({
+//         success: false,
+//         message: "Failed to upload logo",
+//       });
+//       return;
+//     }
+
+//     // Assuming logo is an object containing Cloudinary URL and other relevant data
+//     console.log(uploadLogo);
+//     res.status(201).json({
+//       success: true,
+//       message: "Logo uploaded successfully",
+//       logoUrl: uploadLogo.secure_url, // Adjust based on Cloudinary data structure
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(400).json({
+//       success: false,
+//       message: "Failed to upload image",
+//     });
+//   }
+// };
+
 export const adminProfile = async (req, res) => {
   try {
     const admin = await getProfile(Admin, req.decodedToken._id);

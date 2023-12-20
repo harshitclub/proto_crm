@@ -16,7 +16,6 @@ import opportunityRouter from "./routes/opportunity.routes.js";
 import contactPersonRouter from "./routes/contact.person.routes.js";
 import todoRouter from "./routes/todo.routes.js";
 import { limiter } from "./middlewares/rate.limiter.js";
-import { handleInvalidRoute } from "./middlewares/handleInvalidRoute.js";
 
 // Configure environment variables
 dotenv.config();

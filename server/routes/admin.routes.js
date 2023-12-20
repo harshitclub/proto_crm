@@ -32,4 +32,6 @@ adminRouter.patch("/update", adminAuth, adminProfileUpdate);
 adminRouter.post("/assign-account", adminAuth, assignAccounts);
 adminRouter.delete("/unassign-account", adminAuth, unassignAccounts);
 
+// adminRouter.post("/upload-logo", upload.none(), uploadLogo);
+
 export default adminRouter;
