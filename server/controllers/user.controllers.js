@@ -7,78 +7,60 @@ import validateMongoId from "../utils/validateMongoId.js";
 import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import { getProfile } from "../helpers/commonFunc.js";
 import { loginSchema, userRegisterSchema } from "../helpers/zodSchemas.js";
+import { sendErrorResponse } from "../utils/handleErrors.js";
+
+// ****************** Common functions for this controller *********************//
+
+async function getUserByIdExcludingSensitiveInfo(userId) {
+  return await User.findById(userId).select("-password -refreshToken");
+}
+
+// *****************************************************************************//
 
 export const userRegister = async (req, res) => {
   try {
-    // Extract required fields from request body
     const { name, email, phone, designation, location, password } =
       await userRegisterSchema.parseAsync(req.body);
 
     // Check if user with provided email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    if (await doesUserExist(email)) {
       return res.status(409).send({
         success: false,
-        message: "User already registered. Please login.",
+        message: "User already registered with this email.",
       });
     }
 
-    // Hash the password for secure storage
     const hashPassword = await passwordHash(password);
 
-    // Extract admin token from cookies
-    const adminToken = req.cookies.proto_access;
+    const adminID = await getAdminIdFromToken(req.cookies.proto_access);
 
-    const verifyAdminToken = await verifyJwtToken(adminToken);
-    const adminID = verifyAdminToken._id;
-    validateMongoId(adminID);
+    const findAdmin = await findAdminById(adminID);
 
-    // Find the admin associated with the token
-    const findAdmin = await Admin.findById(adminID); // Find admin by extracted ID
-
-    // Check if admin exists
     if (!findAdmin) {
       return res.status(401).send({
         success: false,
-        message: "Admin Not Found", // Inform user of missing admin
+        message: "Admin Not Found",
       });
     }
 
-    // Create new admin
-    const newUser = await User({
-      admin: adminID,
+    const newUser = await createUser(
+      adminID,
       name,
       email,
       phone,
       designation,
       location,
-      password: hashPassword,
-    });
-
-    // Start a MongoDB transaction for efficient data manipulation
-    const session = await mongoose.startSession();
-    session.startTransaction(); // Begin transaction
-
-    // Save the new user to the database
-    await newUser.save();
-
-    // Update the admin's user list
-    findAdmin.users.push(newUser); // Add new user to the admin's users list
-    await findAdmin.save(); // Update the admin document in the database
-
-    // Commit the transaction to permanently save the changes
-    await session.commitTransaction();
-
-    // Fetch the newly created user with specific fields excluded (sensitive data)
-    const createdUser = await User.findById(newUser._id).select(
-      "-password -refreshToken" // Exclude sensitive fields from response
+      hashPassword
     );
 
-    // Respond with success message and filtered user data
+    // Fetch the newly created user with specific fields excluded (sensitive data)
+
+    const createdUser = await getUserByIdExcludingSensitiveInfo(newUser._id);
+
     res.status(201).json({
       success: true,
-      message: "User registered successfully.",
-      data: createdUser, // Provide user data without sensitive information
+      message: "User created successfully",
+      data: createdUser,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -96,6 +78,55 @@ export const userRegister = async (req, res) => {
       });
     }
   }
+
+  async function doesUserExist(email) {
+    return Boolean(await User.findOne({ email }));
+  }
+
+  async function getAdminIdFromToken(adminToken) {
+    const verifyAdminToken = await verifyJwtToken(adminToken);
+    const adminID = verifyAdminToken._id;
+    validateMongoId(adminID);
+    return adminID;
+  }
+
+  async function findAdminById(adminID) {
+    return await Admin.findById(adminID);
+  }
+
+  async function createUser(
+    adminID,
+    name,
+    email,
+    phone,
+    designation,
+    location,
+    password
+  ) {
+    const newUser = await User({
+      admin: adminID,
+      name,
+      email,
+      phone,
+      designation,
+      location,
+      password,
+    });
+
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
+    await newUser.save();
+
+    await Admin.findOneAndUpdate(
+      { _id: adminID },
+      { $push: { users: newUser } },
+      { session }
+    );
+
+    await session.commitTransaction();
+    return newUser;
+  }
 };
 
 export const userLogin = async (req, res) => {
@@ -106,33 +137,25 @@ export const userLogin = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).send({
-        success: false,
-        message: "User Not Found",
-      });
+      return sendErrorResponse(res, 401, "User Not Found");
     }
 
     // validate password
     const isPasswordValid = await isPasswordCorrect(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).send({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return sendErrorResponse(res, 401, "Invalid credentials");
     }
 
     // Generate tokens
-    const accessToken = await user.generateAccessToken();
-    const refreshToken = await user.generateRefreshToken();
+    const { accessToken, refreshToken } = await generateTokens(user);
 
     // Update user with refresh token
     user.refreshToken = refreshToken;
     await user.save();
 
-    const loggedInUser = await User.findById(user.id).select(
-      "-password -refreshToken"
-    );
+    // Fetch the logged-in user with specific fields excluded (sensitive data)
+    const loggedInUser = await getUserByIdExcludingSensitiveInfo(user.id);
 
     const options = {
       httpOnly: true,
@@ -147,7 +170,7 @@ export const userLogin = async (req, res) => {
       .json({
         success: true,
         message: "Login successful",
-        user: loggedInUser,
+        data: loggedInUser,
       });
   } catch (error) {
     // handle Zod validation errors
@@ -166,45 +189,47 @@ export const userLogin = async (req, res) => {
       });
     }
   }
+
+  async function generateTokens(user) {
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    return { accessToken, refreshToken };
+  }
 };
 
 export const userLogout = async (req, res) => {
-  const userId = req.decodedToken._id;
-  validateMongoId(userId);
-  return User.findByIdAndUpdate(
-    userId,
-    {
-      $set: {
-        refreshToken: undefined,
-      },
-    },
-    {
-      new: true,
+  try {
+    const userId = req.decodedToken._id;
+    validateMongoId(userId);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { refreshToken: undefined } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return sendErrorResponse(res, 404, "User not found");
     }
-  )
-    .then(() => {
-      const options = {
-        httpOnly: true,
-        secure: true,
-      };
 
-      return res.status(200).clearCookie("proto_access", options).json({
-        message: "User Logged Out",
-      });
-    })
-    .catch((error) => {
-      console.error(error); // Log the error for debugging
-
-      // Handle specific errors
-      if (error.name === "ValidationError") {
-        return res.status(400).json({ error: "Invalid user ID" });
-      } else if (error.name === "CastError") {
-        return res.status(400).json({ error: "Invalid user ID format" });
-      } else {
-        // fallback for unknown errors
-        return res.status(500).json({ error: "Internal server error" });
-      }
+    const options = { httpOnly: true, secure: true };
+    res.status(200).clearCookie("proto_access", options).json({
+      success: true,
+      message: "User Logged Out",
     });
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+
+    // Handle specific errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ error: "Invalid user ID" });
+    } else if (error.name === "CastError") {
+      return res.status(400).json({ error: "Invalid user ID format" });
+    } else {
+      // Fallback for unknown errors
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
 };
 
 export const userProfile = async (req, res) => {
@@ -212,16 +237,13 @@ export const userProfile = async (req, res) => {
     const user = await getProfile(User, req.decodedToken._id);
 
     if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found",
-      });
+      return sendErrorResponse(res, 404, "User not found");
     }
 
     return res.status(200).json({
       success: true,
       message: "User Profile",
-      user,
+      data: user,
     });
   } catch (error) {
     console.error(error);
@@ -250,24 +272,21 @@ export const userProfile = async (req, res) => {
 
 export const changeUserPassword = async (req, res) => {
   try {
-    // Ensure required fields are present
-    if (!req.body || !req.body.oldPassword || !req.body.newPassword) {
-      return res.status(400).send({
-        success: false,
-        message: "Missing required fields: oldPassword, newPassword",
-      });
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return sendErrorResponse(
+        res,
+        400,
+        "Missing required fields: oldPassword, newPassword"
+      );
     }
 
-    const { oldPassword, newPassword } = req.body;
     const userId = req.decodedToken._id;
 
     // Verify user existence
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found",
-      });
+      return sendErrorResponse(res, 404, "User not found");
     }
 
     // Check old password validity
@@ -276,10 +295,7 @@ export const changeUserPassword = async (req, res) => {
       user.password
     );
     if (!isOldPasswordValid) {
-      return res.status(400).send({
-        success: false,
-        message: "Incorrect old password",
-      });
+      return sendErrorResponse(res, 400, "Incorrect old password");
     }
 
     const hashPassword = await passwordHash(newPassword);
@@ -322,30 +338,22 @@ export const getAccounts = async (req, res) => {
   const userId = req.decodedToken._id;
 
   try {
-    const user = await User.findById(userId)
-      .select("-password -refreshToken")
-      .populate("accounts");
+    const user = await findUserWithAccounts(userId);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return sendErrorResponse(res, 404, "User not found");
     }
 
     const userAccounts = user.accounts;
 
     if (!userAccounts || userAccounts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No accounts found for the user",
-      });
+      return sendErrorResponse(res, 404, "No accounts found for the user");
     }
 
     return res.status(200).json({
       success: true,
       message: "Accounts fetched successfully",
-      accounts: userAccounts,
+      data: userAccounts,
     });
   } catch (error) {
     console.error(error);
@@ -353,5 +361,12 @@ export const getAccounts = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+
+  async function findUserWithAccounts(userId) {
+    validateMongoId(userId);
+    return await User.findById(userId)
+      .select("-password -refreshToken")
+      .populate("accounts");
   }
 };
