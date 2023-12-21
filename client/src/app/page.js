@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <main>
-      <h1>proto_crm</h1>
+      <h1>Home</h1>
     </main>
   );
 }
