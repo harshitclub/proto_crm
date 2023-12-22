@@ -11,6 +11,10 @@ import { verifyJwtToken } from "../utils/jwtFunctions.js";
 import validateMongoId from "../utils/validateMongoId.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import {
+  sendErrorResponse,
+  sendSuccessResponse,
+} from "../utils/handleErrors.js";
 
 export const adminRegister = async (req, res) => {
   try {
@@ -20,10 +24,11 @@ export const adminRegister = async (req, res) => {
     // Check for existing admin
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
-      return res.status(409).send({
-        success: false,
-        message: "Admin already registered. Please login.",
-      });
+      return sendErrorResponse(
+        res,
+        409,
+        "Admin already registered. Please login."
+      );
     }
 
     const hashPassword = await passwordHash(password);
@@ -287,16 +292,13 @@ export const adminProfile = async (req, res) => {
     const admin = await getProfile(Admin, req.decodedToken._id);
 
     if (!admin) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found",
-      });
+      return sendErrorResponse(res, 404, "Admin not found");
     }
 
     return res.status(200).json({
       success: true,
       message: "Admin Profile",
-      admin,
+      data: admin,
     });
   } catch (error) {
     console.error(error);
@@ -324,41 +326,27 @@ export const adminProfile = async (req, res) => {
 };
 
 export const getAdminAccounts = async (req, res) => {
-  const adminId = req.decodedToken._id;
   try {
-    const admin = await Admin.findById(adminId).populate({
-      path: "accounts",
-      populate: {
-        path: "contactPerson",
-        // Optionally specify select fields for contactPerson
-        // select: "name email"
-      },
-      populate: {
-        path: "opportunities",
-        // Optionally specify select fields for opportunities
-        // select: "title company stage"
-      },
-    });
+    const adminId = req.decodedToken._id;
+    const admin = await findAdminWithAccounts(adminId);
 
     if (!admin) {
-      return res.status(404).send({
-        success: false,
-        message: "Admin not found",
-      });
+      return sendErrorResponse(res, 404, "Admin not found");
     }
 
     // If no accounts exist for this admin, respond with informative message
     if (!admin.accounts || !admin.accounts.length) {
-      return res.status(200).send({
-        success: true,
-        message: "No active accounts found for this admin",
-      });
+      return sendSuccessResponse(
+        res,
+        200,
+        "No active accounts found for this admin"
+      );
     }
 
     return res.status(200).json({
       success: true,
       message: "Accounts Fetched",
-      accounts: admin.accounts,
+      data: admin.accounts,
     });
   } catch (error) {
     console.error(error);
@@ -383,40 +371,40 @@ export const getAdminAccounts = async (req, res) => {
       });
     }
   }
+
+  async function findAdminWithAccounts(adminId) {
+    validateMongoId(adminId);
+    return await Admin.findById(adminId)
+      .populate({
+        path: "accounts",
+        populate: [{ path: "contactPerson" }, { path: "opportunities" }],
+      })
+      .select("-password -refreshToken");
+  }
 };
 
 export const getAdminUsers = async (req, res) => {
-  const adminId = req.decodedToken._id;
   try {
-    const admin = await Admin.findById(adminId).populate({
-      path: "users",
-      populate: {
-        path: "accounts",
-        // Optionally specify select fields for contactPerson
-        // select: "name email"
-      },
-      select: "-password -refreshToken",
-    });
+    const adminId = req.decodedToken._id;
+    const admin = await findAdminWithUsers(adminId);
 
     if (!admin) {
-      return res.status(404).send({
-        success: false,
-        message: "Admin not found",
-      });
+      return sendErrorResponse(res, 404, "Admin not found");
     }
 
     // If no accounts exist for this admin, respond with informative message
     if (!admin.users || !admin.users.length) {
-      return res.status(200).send({
-        success: true,
-        message: "No active users found for this admin",
-      });
+      return sendSuccessResponse(
+        res,
+        200,
+        "No active users found for this admin"
+      );
     }
 
     return res.status(200).json({
       success: true,
       message: "Users Fetched",
-      users: admin.users,
+      data: admin.users,
     });
   } catch (error) {
     console.error(error);
@@ -440,6 +428,16 @@ export const getAdminUsers = async (req, res) => {
         error,
       });
     }
+  }
+
+  async function findAdminWithUsers(adminId) {
+    validateMongoId(adminId);
+    return await Admin.findById(adminId)
+      .populate({
+        path: "users",
+        populate: { path: "accounts" },
+      })
+      .select("-password -refreshToken");
   }
 };
 
