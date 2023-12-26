@@ -441,6 +441,51 @@ export const getAdminUsers = async (req, res) => {
   }
 };
 
+export const adminGetUser = async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    validateMongoId(userId);
+
+    const user = await User.findById(userId).select("-password -refreshToken");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User fetched",
+      data: user,
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (error.name === "CastError") {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid admin ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Handle Admin schema validation errors if applicable
+      return res.status(400).send({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+        error,
+      });
+    }
+  }
+};
+
 export const changeAdminPassword = async (req, res) => {
   try {
     // Ensure required fields are present
@@ -574,8 +619,6 @@ export const adminProfileUpdate = async (req, res) => {
   }
 };
 
-// not completely workable function
-
 export const assignAccounts = async (req, res) => {
   const { userId, accountIds } = req.body;
 
@@ -636,8 +679,6 @@ export const assignAccounts = async (req, res) => {
   }
 };
 
-// not completely workable function
-
 export const unassignAccounts = async (req, res) => {
   const { userId, accountIdsToDelete } = req.body;
 
@@ -675,5 +716,110 @@ export const unassignAccounts = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+export const adminUpdateUser = async (req, res) => {
+  try {
+    const { name, email, phone, designation, location } = req.body;
+    const userId = req.params.id;
+
+    // Validate MongoDB ID format early
+    validateMongoId(userId);
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Update fields directly
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (designation) user.designation = designation;
+    if (location) user.location = location;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Handle specific error types with tailored messages
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Provide more specific validation error details if possible
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+};
+
+export const adminUpdateUserPassword = async (req, res) => {
+  const { newPassword } = req.body;
+  const userId = req.params.id;
+
+  try {
+    validateMongoId(userId);
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const hashPassword = await passwordHash(newPassword);
+
+    if (newPassword) user.password = hashPassword;
+
+    await user.save();
+    res.status(200).json({
+      success: true,
+      message: "User password changed",
+    });
+  } catch (error) {
+    console.error(error);
+
+    // Handle specific error types with tailored messages
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID format",
+      });
+    } else if (error.name === "ValidationError") {
+      // Provide more specific validation error details if possible
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: error.errors,
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
   }
 };

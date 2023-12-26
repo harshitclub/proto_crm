@@ -1,10 +1,13 @@
 import express from "express";
 import {
+  adminGetUser,
   adminLogin,
   adminLogout,
   adminProfile,
   adminProfileUpdate,
   adminRegister,
+  adminUpdateUser,
+  adminUpdateUserPassword,
   assignAccounts,
   changeAdminPassword,
   getAdminAccounts,
@@ -28,6 +31,13 @@ adminRouter.post("/change-password", auth, changeAdminPassword);
 adminRouter.get("/profile", adminAuth, adminProfile);
 adminRouter.get("/accounts", adminAuth, getAdminAccounts);
 adminRouter.get("/users", adminAuth, getAdminUsers);
+adminRouter.get("/user/:id", adminAuth, adminGetUser);
+adminRouter.patch("/update-user/:id", adminAuth, adminUpdateUser);
+adminRouter.patch(
+  "/update-user-password/:id",
+  adminAuth,
+  adminUpdateUserPassword
+);
 adminRouter.patch("/update", adminAuth, adminProfileUpdate);
 adminRouter.post("/assign-account", adminAuth, assignAccounts);
 adminRouter.delete("/unassign-account", adminAuth, unassignAccounts);

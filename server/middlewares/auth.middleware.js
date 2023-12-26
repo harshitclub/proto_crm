@@ -33,12 +33,11 @@ export const adminAuth = async (req, res, next) => {
       const adminId = await req.decodedToken._id;
 
       validateMongoId(adminId);
-      const admin = await Admin.findById(adminId);
 
-      // Authorization check
-      if (!admin) {
-        throw new Error(401, "Invalid token");
-      } else if (admin.role !== "Admin") {
+      // Check for admin existence using $exists
+      const adminExists = await Admin.exists({ _id: adminId });
+
+      if (!adminExists) {
         throw new Error(403, "Insufficient permissions for this route");
       }
 
@@ -62,11 +61,10 @@ export const superAdminAuth = async (req, res, next) => {
       const superAdminId = await req.decodedToken._id;
       validateMongoId(superAdminId);
 
-      const superAdmin = await SuperAdmin.findById(superAdminId);
+      // Check for admin existence using $exists
+      const superAdminExist = await SuperAdmin.exists({ _id: superAdminId });
 
-      if (!superAdmin) {
-        throw new Error(401, "Invalid admin token");
-      } else if (superAdmin.role !== "SuperAdmin") {
+      if (!superAdminExist) {
         throw new Error(403, "Insufficient permissions for this route");
       }
       next();
