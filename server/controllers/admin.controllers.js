@@ -486,6 +486,10 @@ export const adminGetUser = async (req, res) => {
   }
 };
 
+export const adminBlockUser = async (req, res) => {};
+
+export const adminDeleteUser = async (req, res) => {};
+
 export const changeAdminPassword = async (req, res) => {
   try {
     // Ensure required fields are present

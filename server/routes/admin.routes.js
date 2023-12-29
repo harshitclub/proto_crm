@@ -1,5 +1,7 @@
 import express from "express";
 import {
+  adminBlockUser,
+  adminDeleteUser,
   adminGetUser,
   adminLogin,
   adminLogout,
@@ -32,6 +34,8 @@ adminRouter.get("/profile", adminAuth, adminProfile);
 adminRouter.get("/accounts", adminAuth, getAdminAccounts);
 adminRouter.get("/users", adminAuth, getAdminUsers);
 adminRouter.get("/user/:id", adminAuth, adminGetUser);
+adminRouter.patch("/user-block/:id", adminAuth, adminBlockUser);
+adminRouter.delete("/user-delete/:id", adminAuth, adminDeleteUser);
 adminRouter.patch("/update-user/:id", adminAuth, adminUpdateUser);
 adminRouter.patch(
   "/update-user-password/:id",
