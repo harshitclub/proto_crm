@@ -3,3 +3,124 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+a {
+  text-decoration: none;
+}
+
+/* common classses */
+.flex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spaceBtw {
+  justify-content: space-between;
+}
+
+.alignStart {
+  align-items: flex-start;
+}
+
+.alignEnd {
+  align-items: flex-end;
+}
+
+.justifyStart {
+  justify-content: flex-start;
+}
+
+.justifyEnd {
+  justify-content: flex-end;
+}
+
+.flexColumn {
+  flex-direction: column;
+}
+
+/* height */
+.height100vh {
+  height: 100vh;
+}
+
+/* -------widths------------------ */
+
+.width100 {
+  width: 100%;
+}
+
+.maxWidth {
+  max-width: 1450px;
+}
+
+.width40 {
+  width: 40%;
+}
+
+.width48 {
+  width: 48%;
+}
+
+.width49 {
+  width: 49%;
+}
+
+.width50 {
+  width: 50%;
+}
+
+.width60 {
+  width: 60%;
+}
+
+.width90 {
+  width: 95%;
+}
+
+/* --------------------------------------------- */
+
+.textJustify {
+  text-align: justify;
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.textLeft {
+  text-align: left;
+}
+
+.textRight {
+  text-align: right;
+}
+
+/* ----------------------------------------------- */
+.border {
+  border: 1px solid red;
+}
+
+/* -----------react-icon-styles------------------ */
+.iconMargin15 {
+  margin: 0 0 -0.15rem 0;
+}
+.iconMargin18 {
+  margin: 0 0 -0.18rem 0;
+}
+.iconMargin20 {
+  margin: 0 0 -0.2rem 0;
+}
+
+/* margin */
+.marginBottom1 {
+  margin: 0 0 1rem 0;
+}
+
+/* padding */
+.paddingBottom2 {
+  padding: 0 0 2rem 0;
+}
+.paddingBottom1 {
+  padding: 0 0 1rem 0;
+}
