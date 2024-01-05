@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 import { Layout, Menu, Button, theme, Avatar, Space } from "antd";
 import { Dropdown } from "antd";
-import { RiSettings4Fill } from "react-icons/ri";
+import { RiBookReadLine, RiSettings4Fill } from "react-icons/ri";
 import Link from "next/link";
 import { LogoutBtn } from "@/components/local/Buttons/Buttons";
 const items = [
@@ -58,7 +58,7 @@ const { Header, Sider, Content } = Layout;
 export default function AdminDashboardLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer },
   } = theme.useToken();
 
   return (
@@ -68,38 +68,54 @@ export default function AdminDashboardLayout({ children }) {
           trigger={null}
           collapsible
           collapsed={collapsed}
-          style={{ background: "#fff" }}
+          style={{
+            background: "#fff",
+          }}
         >
           <div className="demo-logo-vertical" />
           <Menu
+            style={{
+              height: "100%",
+            }}
             theme="light"
             mode="inline"
-            defaultSelectedKeys={["1"]}
+            // defaultSelectedKeys={["1"]}
+
             items={[
               {
                 key: "1",
                 icon: <DashboardOutlined />,
-                label: "Dashboard",
+                label: <Link href="/admin/dashboard">Dashboard</Link>,
               },
               {
                 key: "2",
                 icon: <AccountBookOutlined />,
-                label: "Accounts",
+                label: <Link href="/admin/dashboard/accounts">Accounts</Link>,
               },
               {
                 key: "3",
                 icon: <UserSwitchOutlined />,
-                label: "Users",
+                label: <Link href="/admin/dashboard/users">Users</Link>,
               },
               {
                 key: "4",
                 icon: <ProfileOutlined />,
-                label: "Profile",
+                label: <Link href="/admin/dashboard/profile">Profile</Link>,
               },
               {
                 key: "5",
+                icon: <RiBookReadLine />,
+                label: <Link href="/admin/dashboard/notes">Notes</Link>,
+              },
+              {
+                key: "6",
                 icon: <EditOutlined />,
-                label: "Settings",
+                label: <Link href="/admin/dashboard/settings">Settings</Link>,
+              },
+              {
+                key: "7",
+                icon: <EditOutlined />,
+                label: "Logout",
               },
             ]}
           />
@@ -122,15 +138,6 @@ export default function AdminDashboardLayout({ children }) {
               }}
             />
             <Space>
-              <LogoutBtn />
-              <RiSettings4Fill
-                style={{
-                  fontSize: "25px",
-                  color: "grey",
-                  marginBottom: "-9px",
-                  cursor: "pointer",
-                }}
-              />
               <Dropdown
                 menu={{
                   items,
@@ -138,21 +145,23 @@ export default function AdminDashboardLayout({ children }) {
                 size={30}
               >
                 <Avatar
-                  size={30}
+                  size={38}
                   icon={<UserOutlined />}
                   onClick={(e) => e.preventDefault()}
                   style={{ cursor: "pointer" }}
                 />
               </Dropdown>
+              <LogoutBtn />
             </Space>
           </Header>
           <Content
             style={{
-              margin: "10px 10px",
-              padding: 24,
+              margin: 0,
+              padding: 15,
               minHeight: 280,
               background: colorBgContainer,
-              borderRadius: borderRadiusLG,
+              // borderRadius: borderRadiusLG,
+              borderTop: "1px solid var(--borderColor)",
             }}
           >
             {children}

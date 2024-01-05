@@ -1,3 +1,76 @@
 .adminDash {
   height: 100vh;
 }
+
+.adminTabsOne {
+  gap: 0.8rem;
+  margin: 0 0 1rem 0;
+}
+
+.adminTabsOneChild {
+  padding: 1rem;
+  width: 40%;
+  border-radius: 0.2rem;
+}
+
+.adminTabsOneChild h2 {
+  font-size: 4rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 300;
+  color: #4c4c4c;
+}
+
+.adminTabsOneChild p {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: grey;
+}
+
+.dashUsers {
+  background-color: rgba(190, 173, 250, 0.2);
+}
+.dashAccounts {
+  background-color: rgba(251, 161, 183, 0.2);
+}
+.dashNotes {
+  background-color: var(--borderColor);
+}
+
+.adminTabsOneChild .adminTabsOneChildImage img {
+  width: 10rem;
+  height: 10rem;
+}
+
+.adminTabsTwo {
+  gap: 0.8rem;
+}
+
+.adminTabsTwoChild {
+  width: 50%;
+  padding: 1rem;
+  border-radius: 0.2rem;
+  border: 1px solid var(--borderColor);
+}
+
+.adminTabsTwoChild h2 {
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
+}
+
+.adminTabsthree {
+  gap: 0.8rem;
+  margin: 0 0 1rem 0;
+}
+
+.adminTabsThreeChild {
+  width: 25%;
+  padding: 1rem;
+  border-radius: 0.2rem;
+  cursor: pointer;
+}
+
+.adminTabsThreeChild h3 {
+  font-size: 1.4rem;
+  font-weight: 500;
+}

@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+/* color variables */
+:root {
+  --borderColor: #f0f0f0;
+}
+
 a {
   text-decoration: none;
 }
@@ -123,4 +128,9 @@ a {
 }
 .paddingBottom1 {
   padding: 0 0 1rem 0;
+}
+
+/* gaping */
+.gap05 {
+  margin: 0.5 0 !important;
 }

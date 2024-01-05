@@ -7,3 +7,35 @@
   color: #fff;
   cursor: pointer;
 }
+
+.commonBtn {
+  display: inline-block;
+  background-color: #28282b;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  background-color: #e5484d;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.editBtn {
+  display: inline-block;
+  background-color: #28282b;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.2rem;
+  padding: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+}
