@@ -1,0 +1,45 @@
+.adminNotesContainer {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.adminNote {
+  width: 24%;
+  border-radius: 0.2rem;
+  height: 12rem;
+  background-color: var(--borderColor);
+}
+
+.adminNoteHead p {
+  border-radius: 0 0.2rem 0 0.2rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  background-color: #fff;
+  margin: 0;
+  border: 1px solid #d0cccc;
+}
+
+.adminNoteContent p {
+  font-size: 1.2rem;
+  margin: 0 1rem;
+}
+
+.adminNoteActions button {
+  border: none;
+
+  font-size: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.adminNoteActions .adminNoteEdit {
+  background-color: #111111;
+  border-radius: 0 0.2rem 0 0.2rem;
+  color: #fff;
+}
+
+.adminNoteActions .adminNoteDelete {
+  background-color: #e5484d;
+  border-radius: 0.2rem 0 0.2rem 0;
+  color: #fff;
+}
